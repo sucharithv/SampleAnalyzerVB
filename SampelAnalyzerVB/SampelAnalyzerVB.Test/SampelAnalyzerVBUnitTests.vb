@@ -26,52 +26,37 @@ Option Strict On
 Option Explicit On
 
 Public Class Class1
-    Private items As List(Of Integer)
+    Private items As System.Collections.Generic.List(Of Integer)
 
-    Public Sub Main()
-        items = Nothing
-        SimpleCode()
-        Console.ReadLine()
-    End Sub
 
-    Private Sub SimpleCode()
-        If items?.Count > 0 AndAlso AlwaysTrue() Then
-            WriteLog(String.Empty)
+    Private Sub SimpleCode1()
+        If items?.Count > 0 AndAlso AlwaysTrue1() Then
+            WriteLog1(String.Empty)
         Else
-            WriteLog(String.Empty)
+            WriteLog1(String.Empty)
         End If
     End Sub
 
-    Private Function AlwaysTrue() As Nullable(Of Boolean)
-        WriteLog(String.Empty)
+    Private Function AlwaysTrue1() As Boolean
+        WriteLog1(String.Empty)
         Return True
     End Function
 
-    Sub WriteLog(ByVal message As String)
-        Debug.WriteLine(message)
-        Console.WriteLine(message)
+    Sub WriteLog1(ByVal message As String)
+        System.Diagnostics.Debug.WriteLine(message)
     End Sub
 End Class
 "
             Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
-                .Message = String.Format("Type name '{0}' contains lowercase letters", "Module1"),
+                .Message = String.Format("Type name '{0}' contains lowercase letters", "items?.Count "),
                 .Severity = DiagnosticSeverity.Warning,
                 .Locations = New DiagnosticResultLocation() {
-                        New DiagnosticResultLocation("Test0.vb", 13, 12)
+                        New DiagnosticResultLocation("Test0.vb", 10, 12)
                     }
             }
 
             VerifyBasicDiagnostic(test, expected)
 
-            '            Dim fixtest = "
-            'Module MODULE1
-
-            '    Sub Main()
-
-            '    End Sub
-
-            'End Module"
-            '            VerifyBasicFix(test, fixtest)
         End Sub
 
         Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider

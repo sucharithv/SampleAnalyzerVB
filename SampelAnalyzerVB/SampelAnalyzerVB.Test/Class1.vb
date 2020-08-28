@@ -1,30 +1,30 @@
 ﻿Option Strict On
 Option Explicit On
 
-Public Class Class1
-    Private items As List(Of Integer)
+Public Class Class2
+    Private items As System.Collections.Generic.List(Of Integer)
 
-    Public Sub Main()
+    Public Sub Main1()
         items = Nothing
-        SimpleCode()
-        Console.ReadLine()
+        SimpleCode1()
+        System.Console.ReadLine()
     End Sub
 
-    Private Sub SimpleCode()
-        If items?.Count > 0 AndAlso AlwaysTrue() Then
-            WriteLog(String.Empty)
+    Private Sub SimpleCode1()
+        If items?.Count > 0 AndAlso AlwaysTrue1() Then
+            WriteLog1(String.Empty)
         Else
-            WriteLog(String.Empty)
+            WriteLog1(String.Empty)
         End If
     End Sub
 
-    Private Function AlwaysTrue() As Nullable(Of Boolean)
-        WriteLog(String.Empty)
+    Private Function AlwaysTrue1() As Boolean
+        WriteLog1(String.Empty)
         Return True
     End Function
 
-    Sub WriteLog(ByVal message As String)
-        Debug.WriteLine(message)
-        Console.WriteLine(message)
+    Sub WriteLog1(ByVal message As String)
+        System.Diagnostics.Debug.WriteLine(message)
+        System.Console.WriteLine(message)
     End Sub
 End Class

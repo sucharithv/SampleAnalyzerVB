@@ -45,6 +45,8 @@ Public Class SampelAnalyzerVBAnalyzer
     Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode)
         If TypeOf node Is ConditionalAccessExpressionSyntax OrElse TypeOf node Is InvocationExpressionSyntax Then
             Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
+            Dim diagn = context.Compilation.GetDiagnostics()
+
             If IsNullabelType(typeInfo.Type) Then
                 Dim diag = Diagnostic.Create(Rule, node.GetLocation(), node.GetText())
                 context.ReportDiagnostic(diag)
@@ -96,11 +98,12 @@ Public Class SampelAnalyzerVBAnalyzer
         If typeInfo Is Nothing Then Return False
         If TypeOf (typeInfo) Is IErrorTypeSymbol Then Return False
 
-        If typeInfo.SpecialType = SpecialType.System_Nullable_T Then
+        If typeInfo.Name = "Nullable" Then
             Return True
         Else
             Return False
-            End If
+        End If
+
     End Function
 
     'Private Sub AnalyzeSymbol(context As SymbolAnalysisContext)
