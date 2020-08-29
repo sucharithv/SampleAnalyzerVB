@@ -32,23 +32,25 @@ Public Class SampelAnalyzerVBAnalyzer
     Public Overrides Sub Initialize(context As AnalysisContext)
         ' TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
         ' See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-        'context.RegisterSymbolAction(AddressOf AnalyzeSymbol, SymbolKind.NamedType)
         context.RegisterSyntaxNodeAction(AddressOf AnalyzeNode, SyntaxKind.IfStatement)
     End Sub
 
     Private Sub AnalyzeNode(context As SyntaxNodeAnalysisContext)
+        Dim diagnostics = context.SemanticModel.GetDiagnostics()
+        If diagnostics.Length > 0 Then Return
+
         Dim ifExp = DirectCast(context.Node, IfStatementSyntax)
         ProcessNodes(context, ifExp.Condition)
-        'ProcessExpression(context, ifExp.Condition)
     End Sub
 
     Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode)
-        If TypeOf node Is ConditionalAccessExpressionSyntax OrElse TypeOf node Is InvocationExpressionSyntax Then
+        If TypeOf node Is ConditionalAccessExpressionSyntax OrElse
+            TypeOf node Is InvocationExpressionSyntax OrElse
+            TypeOf node Is MemberAccessExpressionSyntax Then
             Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
-            Dim diagn = context.Compilation.GetDiagnostics()
 
             If IsNullabelType(typeInfo.Type) Then
-                Dim diag = Diagnostic.Create(Rule, node.GetLocation(), node.GetText())
+                Dim diag = Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd())
                 context.ReportDiagnostic(diag)
             End If
         Else
@@ -60,40 +62,6 @@ Public Class SampelAnalyzerVBAnalyzer
         End If
     End Sub
 
-
-    'Private Sub ProcessExpression(context As SyntaxNodeAnalysisContext, exp As ExpressionSyntax)
-    '    Select Case exp.Kind
-    '        Case SyntaxKind.AndAlsoExpression,
-    '             SyntaxKind.AndExpression,
-    '             SyntaxKind.OrElseExpression,
-    '             SyntaxKind.OrExpression
-    '            Dim binExp = DirectCast(exp, BinaryExpressionSyntax)
-    '            ProcessBinaryExpression(context, binExp)
-    '        Case SyntaxKind.InvocationExpression
-    '            Dim invocationExp = DirectCast(exp, InvocationExpressionSyntax)
-    '            ProcessInvocationExpression(context, invocationExp)
-    '        Case SyntaxKind.GreaterThanExpression
-
-    '        Case SyntaxKind.CharacterLiteralExpression, SyntaxKind.ConditionalAccessExpression, SyntaxKind.CTypeExpression, SyntaxKind.DateLiteralExpression, SyntaxKind.DictionaryAccessExpression, SyntaxKind.DirectCastExpression, 
-
-    '        Case Else
-    '            Console.WriteLine("unhandled kind encountered : " + exp.Kind)
-    '    End Select
-    'End Sub
-
-    'Private Sub ProcessBinaryExpression(context As SyntaxNodeAnalysisContext, binaryExp As BinaryExpressionSyntax)
-    '    ProcessExpression(binaryExp.Left)
-    '    ProcessExpression(binaryExp.Right)
-    'End Sub
-
-    'Private Sub ProcessInvocationExpression(context As SyntaxNodeAnalysisContext, invocationExp As InvocationExpressionSyntax)
-    '    Dim type = context.SemanticModel.GetTypeInfo(invocationExp).Type
-    '    If IsNullabelType(type) Then
-    '        Dim diag = Diagnostic.Create(Rule, invocationExp.GetLocation(), invocationExp.GetText())
-    '        context.ReportDiagnostic(diag)
-    '    End If
-    'End Sub
-
     Private Function IsNullabelType(typeInfo As ITypeSymbol) As Boolean
         If typeInfo Is Nothing Then Return False
         If TypeOf (typeInfo) Is IErrorTypeSymbol Then Return False
@@ -103,20 +71,5 @@ Public Class SampelAnalyzerVBAnalyzer
         Else
             Return False
         End If
-
     End Function
-
-    'Private Sub AnalyzeSymbol(context As SymbolAnalysisContext)
-    '    ' TODO: Replace the following code with your own analysis, generating Diagnostic objects for any issues you find
-
-    '    Dim namedTypeSymbol = CType(context.Symbol, INamedTypeSymbol)
-
-    '    ' Find just those named type symbols with names containing lowercase letters.
-    '    If namedTypeSymbol.Name.ToCharArray.Any(AddressOf Char.IsLower) Then
-    '        ' For all such symbols, produce a diagnostic.
-    '        Dim diag = Diagnostic.Create(Rule, namedTypeSymbol.Locations(0), namedTypeSymbol.Name)
-
-    '        context.ReportDiagnostic(diag)
-    '    End If
-    'End Sub
 End Class

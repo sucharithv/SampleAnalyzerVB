@@ -17,7 +17,7 @@ Namespace SampelAnalyzerVB.Test
             VerifyBasicDiagnostic(test)
         End Sub
 
-        'Diagnostic And CodeFix both triggered And checked for
+        'Basic Scenario - items?.Count > 0
         <TestMethod>
         Public Sub TestMethod2()
 
@@ -26,29 +26,141 @@ Option Strict On
 Option Explicit On
 
 Public Class Class1
-    Private items As System.Collections.Generic.List(Of Integer)
+    Private items As System.Collections.Generic.List(Of Integer) = Nothing
 
-
-    Private Sub SimpleCode1()
-        If items?.Count > 0 AndAlso AlwaysTrue1() Then
-            WriteLog1(String.Empty)
-        Else
-            WriteLog1(String.Empty)
+    Public Sub SimpleCode()
+        If items?.Count > 0 AndAlso AlwaysTrue() Then
         End If
     End Sub
 
-    Private Function AlwaysTrue1() As Boolean
-        WriteLog1(String.Empty)
+    Private Function AlwaysTrue() As Boolean
         Return True
     End Function
-
-    Sub WriteLog1(ByVal message As String)
-        System.Diagnostics.Debug.WriteLine(message)
-    End Sub
 End Class
 "
             Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
-                .Message = String.Format("Type name '{0}' contains lowercase letters", "items?.Count "),
+                .Message = String.Format("Type name '{0}' contains lowercase letters", "items?.Count"),
+                .Severity = DiagnosticSeverity.Warning,
+                .Locations = New DiagnosticResultLocation() {
+                        New DiagnosticResultLocation("Test0.vb", 9, 12)
+                    }
+            }
+
+            VerifyBasicDiagnostic(test, expected)
+
+            '            Dim fixtest = "
+            'Module MODULE1
+
+            '    Sub Main()
+
+            '    End Sub
+
+            'End Module"
+            '            VerifyBasicFix(test, fixtest)
+        End Sub
+
+        <TestMethod>
+        Public Sub TestMethod2Fixed()
+
+            Dim test = "
+Option Strict On
+Option Explicit On
+
+Public Class Class1
+    Private items As System.Collections.Generic.List(Of Integer) = Nothing
+
+    Public Sub SimpleCode()
+        If (items?.Count).GetValueOrDefault > 0 AndAlso AlwaysTrue() Then
+        End If
+    End Sub
+
+    Private Function AlwaysTrue() As Boolean
+        Return True
+    End Function
+End Class
+"
+
+            VerifyBasicDiagnostic(test)
+        End Sub
+
+        ' HCSIS Scenario 1 - items?.Exists(Function(x) x.id = 1)
+        <TestMethod>
+        Public Sub TestMethod3()
+
+            Dim test = "
+Option Strict On
+Option Explicit On
+
+Public Class Class1
+    Private items As System.Collections.Generic.List(Of Integer) = Nothing
+
+    Public Sub SimpleCode()
+        If items?.Exists(Function(x) x > 10) AndAlso AlwaysTrue() Then
+        End If
+    End Sub
+
+    Private Function AlwaysTrue() As Boolean
+        Return True
+    End Function
+End Class
+"
+            Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
+                .Message = String.Format("Type name '{0}' contains lowercase letters", "items?.Exists(Function(x) x > 10)"),
+                .Severity = DiagnosticSeverity.Warning,
+                .Locations = New DiagnosticResultLocation() {
+                        New DiagnosticResultLocation("Test0.vb", 9, 12)
+                    }
+            }
+
+            VerifyBasicDiagnostic(test, expected)
+
+            '            Dim fixtest = "
+            'Module MODULE1
+
+            '    Sub Main()
+
+            '    End Sub
+
+            'End Module"
+            '            VerifyBasicFix(test, fixtest)
+        End Sub
+
+        ' HCSIS Scenario 2 - selectedSegment?.EffectiveBeginDate.HasValue
+        <TestMethod>
+        Public Sub TestMethod4()
+
+            Dim test = "
+Option Strict On
+Option Explicit On
+
+Public Class Class1
+    Private items As System.Collections.Generic.List(Of Integer) = Nothing
+
+    Public Sub SimpleCode()
+        Dim record As Foo = Nothing
+        If record?.EffectiveBeginDate.HasValue AndAlso AlwaysTrue() Then
+        End If
+    End Sub
+
+    Private Function AlwaysTrue() As Boolean
+        Return True
+    End Function
+
+    Private Class Foo
+        Private _effectiveBeginDate As System.Nullable(Of Date)
+        Public Property EffectiveBeginDate() As System.Nullable(Of Date)
+            Get
+                Return _effectiveBeginDate
+            End Get
+            Set(ByVal value As System.Nullable(Of Date))
+                _effectiveBeginDate = value
+            End Set
+        End Property
+    End Class
+End Class
+"
+            Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
+                .Message = String.Format("Type name '{0}' contains lowercase letters", "record?.EffectiveBeginDate.HasValue"),
                 .Severity = DiagnosticSeverity.Warning,
                 .Locations = New DiagnosticResultLocation() {
                         New DiagnosticResultLocation("Test0.vb", 10, 12)
@@ -57,6 +169,15 @@ End Class
 
             VerifyBasicDiagnostic(test, expected)
 
+            '            Dim fixtest = "
+            'Module MODULE1
+
+            '    Sub Main()
+
+            '    End Sub
+
+            'End Module"
+            '            VerifyBasicFix(test, fixtest)
         End Sub
 
         Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider
