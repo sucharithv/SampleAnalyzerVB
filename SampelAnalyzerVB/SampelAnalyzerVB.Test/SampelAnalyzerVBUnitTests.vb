@@ -38,8 +38,8 @@ Public Class Class1
     End Function
 End Class
 "
-            Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
-                .Message = String.Format("Type name '{0}' contains lowercase letters", "items?.Count"),
+            Dim expected = New DiagnosticResult With {.Id = "DHS9999",
+                .Message = String.Format("Null conditional issue '{0}' may result in Nothing", "items?.Count"),
                 .Severity = DiagnosticSeverity.Warning,
                 .Locations = New DiagnosticResultLocation() {
                         New DiagnosticResultLocation("Test0.vb", 9, 12)
