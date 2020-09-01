@@ -39,24 +39,52 @@ Public Class SampelAnalyzerVBAnalyzer
     End Sub
 
     Private Sub AnalyzeNode(context As SyntaxNodeAnalysisContext)
+        Dim ifExp = DirectCast(context.Node, IfStatementSyntax)
+
+        ' Skip analysis if there are errors in the source code as type information is not available
+        ' when there are errors in the file
+        ' TODO: see if there is a way to report an error when running unit tests
         Dim diagnosticIssues = context.SemanticModel.GetDiagnostics()
         If diagnosticIssues.Any(Function(d) d.Severity = DiagnosticSeverity.Error) Then Return
 
-        Dim ifExp = DirectCast(context.Node, IfStatementSyntax)
-        Dim containsAndAlso = ifExp.DescendantNodes.Any(Function(node) node.Kind = SyntaxKind.AndAlsoExpression OrElse node.Kind = SyntaxKind.OrElseExpression)
-        ProcessNodes(context, ifExp.Condition, containsAndAlso)
+        ' If the expression contains a short curcuit operator evaluate each of the expressions
+        ' to see any any of them result in Nullable type
+        Dim containsShortCircuitExp As Boolean = False
+        Dim ShortCircuitingExpressions = ifExp.DescendantNodes().TakeWhile(Function(node) IsShortCircuitNode(node))
+        For Each node In ShortCircuitingExpressions
+            ProcessShortCircuitingExpression(context, node)
+            containsShortCircuitExp = True
+        Next
+
+        If containsShortCircuitExp = False Then
+            Throw New NotImplementedException()
+            'TODO:
+            'ProcessNodes(context, ifExp.Condition, False)
+        End If
+    End Sub
+
+    Private Shared Function IsShortCircuitNode(node As SyntaxNode) As Boolean
+        Return node.Kind = SyntaxKind.AndAlsoExpression OrElse node.Kind = SyntaxKind.OrElseExpression
+    End Function
+
+    Private Sub ProcessShortCircuitingExpression(context As SyntaxNodeAnalysisContext, node As SyntaxNode)
+        For Each childNode In node.ChildNodes()
+            If Not IsShortCircuitNode(childNode) Then
+                If IsNullableExpression(context, childNode) Then
+                    Dim diag = Diagnostic.Create(AndAlsoRule, childNode.GetLocation(), childNode.GetText().ToString().TrimEnd())
+                    context.ReportDiagnostic(diag)
+                End If
+            End If
+        Next
     End Sub
 
     Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, ByVal containsAndAlso As Boolean)
-
         If (Not node.ChildNodes.Any) OrElse
             TypeOf node Is ConditionalAccessExpressionSyntax OrElse
             TypeOf node Is InvocationExpressionSyntax OrElse
             TypeOf node Is MemberAccessExpressionSyntax Then
-            Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
 
-            If IsNullabelType(typeInfo.Type) Then
-
+            If IsNullableExpression(context, node) Then
                 Dim diag = If(containsAndAlso,
                                 Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
                                 Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
@@ -70,6 +98,11 @@ Public Class SampelAnalyzerVBAnalyzer
             Next
         End If
     End Sub
+
+    Private Function IsNullableExpression(context As SyntaxNodeAnalysisContext, node As SyntaxNode) As Boolean
+        Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
+        Return IsNullabelType(typeInfo.Type)
+    End Function
 
     Private Function IsNullabelType(typeInfo As ITypeSymbol) As Boolean
         If typeInfo Is Nothing Then Return False

@@ -1,15 +1,14 @@
 ﻿Option Strict On
 Option Explicit On
-Public Class Test5
+Public Class Test6
     Sub EvaluateNullableBool()
         Dim newNullableBool As New Boolean?
-        WriteLog("Evaluating If newNullableBool ...")
-        If newNullableBool Then
-            WriteLog("newNullableBool evaluated to TRUE")
+        WriteLog("Evaluating If newNullableBool Is Nothing...")
+        If newNullableBool Is Nothing Then
+            WriteLog("newNullableBool Is Nothing evaluated to TRUE")
         Else
-            WriteLog("newNullableBool  evaluated to FALSE")
+            WriteLog("newNullableBool Is Nothing evaluated to FALSE")
         End If
-
     End Sub
     Sub WriteLog(ByVal message As String)
         System.Diagnostics.Debug.WriteLine(message)

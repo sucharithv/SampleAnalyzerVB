@@ -79,6 +79,9 @@
     <Compile Include="Test2Fixed.vb" />
     <Compile Include="Test3.vb" />
     <Compile Include="Test4.vb" />
+    <Compile Include="Test8.vb" />
+    <Compile Include="Test7.vb" />
+    <Compile Include="Test6.vb" />
     <Compile Include="Test5.vb" />
   </ItemGroup>
   <ItemGroup>

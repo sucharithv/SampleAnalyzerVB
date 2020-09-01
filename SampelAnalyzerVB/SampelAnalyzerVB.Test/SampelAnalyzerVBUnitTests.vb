@@ -21,56 +21,55 @@ Namespace SampelAnalyzerVB.Test
             VerifyBasicDiagnostic(test)
         End Sub
 
-        'Basic Scenario - items?.Count > 0
-        <TestMethod>
-        Public Sub TestNullConditionOperatorWithAndAlso()
-            PerformCodeSegmentTest("NullConditionOperatorWithAndAlso", AndAlsoRuleId, "items?.Count", 9, 12)
-
+        <DataTestMethod()>
+        <DataRow("NullConditionOperatorWithAndAlso", "items?.Count > 0", 9, 12, DisplayName:="ECIS Scenario 1")>
+        <DataRow("Test3", "items?.Exists(Function(x) x > 10)", 8, 12, DisplayName:="HCSIS Scenario 1")>
+        <DataRow("Test4", "record?.EffectiveBeginDate.HasValue", 9, 12, DisplayName:="HCSIS Scenario 2")>
+        Public Sub ShortCircuitingIfShouldFail(ByVal codeFileName As String,
+                                           ByVal message As String,
+                                           ByVal lineNumber As Int32,
+                                           ByVal columnNumber As Int32)
+            PerformFailingTest(codeFileName, AndAlsoRuleId, message, lineNumber, columnNumber)
         End Sub
 
+        <DataTestMethod()>
+        <DataRow("Test5", "newNullableBool", 7, 12, DisplayName:="Boolean?")>
+        Public Sub BasicIfShouldFail(ByVal codeFileName As String,
+                                           ByVal message As String,
+                                           ByVal lineNumber As Int32,
+                                           ByVal columnNumber As Int32)
+            PerformFailingTest(codeFileName, RuleId, message, lineNumber, columnNumber)
+        End Sub
+
+        <DataTestMethod()>
+        <DataRow("Test6", DisplayName:="Is Nothing")>
+        <DataRow("Test7", DisplayName:="IsNot Nothing")>
+        <DataRow("Test8", DisplayName:="Not Is Nothing")>
+        Public Sub BasicIfShouldPass(ByVal codeFileName As String)
+            PerformPassingTest(codeFileName)
+        End Sub
+
+        <DataTestMethod()>
+        <DataRow("Test2Fixed", DisplayName:="?. Wrapped in GetValueOrDefault")>
+        Public Sub ShortCircuitingIfShouldPass(ByVal codeFileName As String)
+            PerformPassingTest(codeFileName)
+        End Sub
 
         Private Shared Function GetTestCodeSegment(ByVal fileName As String) As String
             Return IO.File.ReadAllText($"..\..\..\..\..\SampleReferenceCodeConsole\{fileName}.vb")
         End Function
 
-        <TestMethod>
-        Public Sub TestMethod2Fixed()
-            VerifyBasicDiagnostic(GetTestCodeSegment("Test2Fixed"))
+        Private Sub PerformPassingTest(ByVal codeFileName As String)
+            Dim testCode = GetTestCodeSegment(codeFileName)
+            VerifyBasicDiagnostic(testCode)
         End Sub
 
-        ' HCSIS Scenario 1 - items?.Exists(Function(x) x.id = 1)
-        <TestMethod>
-        Public Sub TestMethod3()
-            PerformCodeSegmentTest("Test3", AndAlsoRuleId, "items?.Exists(Function(x) x > 10)", 8, 12)
-        End Sub
-
-        ' HCSIS Scenario 2 - selectedSegment?.EffectiveBeginDate.HasValue
-        <TestMethod>
-        Public Sub TestMethod4()
-            PerformCodeSegmentTest("Test4", AndAlsoRuleId, "record?.EffectiveBeginDate.HasValue", 9, 12)
-        End Sub
-
-        <TestMethod>
-        Public Sub TestMethod5()
-            PerformCodeSegmentTest("Test5", RuleId, "newNullableBool", 7, 12)
-        End Sub
-
-
-        <DataTestMethod()>
-        <DataRow("Test5", RuleId, "newNullableBool", 7, 12, DisplayName:="DataTestMethod5")>
-        Public Sub PerformCodeSegmentTests(ByVal codeFileName As String,
+        Private Sub PerformFailingTest(ByVal codeFileName As String,
                                            ByVal ruleToTest As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
                                            ByVal columnNumber As Int32)
-            PerformCodeSegmentTest(codeFileName, ruleToTest, message, lineNumber, columnNumber)
-        End Sub
-        Private Sub PerformCodeSegmentTest(ByVal codeFileName As String,
-                                           ByVal ruleToTest As String,
-                                           ByVal message As String,
-                                           ByVal lineNumber As Int32,
-                                           ByVal columnNumber As Int32)
-            Dim test = GetTestCodeSegment(codeFileName)
+            Dim testCode = GetTestCodeSegment(codeFileName)
             Dim expected = New DiagnosticResult With {.Id = ruleToTest,
                 .Message = String.Format(RuleMessage, message),
                 .Severity = DiagnosticSeverity.Warning,
@@ -79,8 +78,9 @@ Namespace SampelAnalyzerVB.Test
                     }
             }
 
-            VerifyBasicDiagnostic(test, expected)
+            VerifyBasicDiagnostic(testCode, expected)
         End Sub
+
 
         Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider
             Return New SampelAnalyzerVBCodeFixProvider()
@@ -89,6 +89,5 @@ Namespace SampelAnalyzerVB.Test
         Protected Overrides Function GetBasicDiagnosticAnalyzer() As DiagnosticAnalyzer
             Return New SampelAnalyzerVBAnalyzer()
         End Function
-
     End Class
 End Namespace
