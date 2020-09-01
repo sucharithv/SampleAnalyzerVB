@@ -13,6 +13,7 @@ Public Class SampelAnalyzerVBAnalyzer
     Inherits DiagnosticAnalyzer
 
     Public Const DiagnosticId = "DHS9999"
+    Public Const AndAlsoDiagnosticId = "DHS9998"
 
     ' You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
     ' See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
@@ -22,10 +23,12 @@ Public Class SampelAnalyzerVBAnalyzer
     Private Const Category = "Naming"
 
     Private Shared Rule As New DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault:=True, description:=Description)
+    Private Shared AndAlsoRule As New DiagnosticDescriptor(AndAlsoDiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault:=True, description:=Description)
+
 
     Public Overrides ReadOnly Property SupportedDiagnostics As ImmutableArray(Of DiagnosticDescriptor)
         Get
-            Return ImmutableArray.Create(Rule)
+            Return ImmutableArray.Create(Rule, AndAlsoRule)
         End Get
     End Property
 
@@ -36,27 +39,33 @@ Public Class SampelAnalyzerVBAnalyzer
     End Sub
 
     Private Sub AnalyzeNode(context As SyntaxNodeAnalysisContext)
-        Dim diagnostics = context.SemanticModel.GetDiagnostics()
-        If diagnostics.Length > 0 Then Return
+        Dim diagnosticIssues = context.SemanticModel.GetDiagnostics()
+        If diagnosticIssues.Any(Function(d) d.Severity = DiagnosticSeverity.Error) Then Return
 
         Dim ifExp = DirectCast(context.Node, IfStatementSyntax)
-        ProcessNodes(context, ifExp.Condition)
+        Dim containsAndAlso = ifExp.DescendantNodes.Any(Function(node) node.Kind = SyntaxKind.AndAlsoExpression OrElse node.Kind = SyntaxKind.OrElseExpression)
+        ProcessNodes(context, ifExp.Condition, containsAndAlso)
     End Sub
 
-    Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode)
-        If TypeOf node Is ConditionalAccessExpressionSyntax OrElse
+    Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, ByVal containsAndAlso As Boolean)
+
+        If (Not node.ChildNodes.Any) OrElse
+            TypeOf node Is ConditionalAccessExpressionSyntax OrElse
             TypeOf node Is InvocationExpressionSyntax OrElse
             TypeOf node Is MemberAccessExpressionSyntax Then
             Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
 
             If IsNullabelType(typeInfo.Type) Then
-                Dim diag = Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd())
+
+                Dim diag = If(containsAndAlso,
+                                Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
+                                Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
                 context.ReportDiagnostic(diag)
             End If
         Else
             For Each childNode In node.ChildNodes()
                 If TypeOf childNode IsNot LiteralExpressionSyntax Then
-                    ProcessNodes(context, childNode)
+                    ProcessNodes(context, childNode, containsAndAlso)
                 End If
             Next
         End If

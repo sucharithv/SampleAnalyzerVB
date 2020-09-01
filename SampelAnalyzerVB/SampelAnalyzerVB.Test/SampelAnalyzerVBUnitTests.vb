@@ -10,174 +10,76 @@ Namespace SampelAnalyzerVB.Test
     Public Class UnitTest
         Inherits CodeFixVerifier
 
+        Private Const AndAlsoRuleId As String = "DHS9998"
+        Private Const RuleId As String = "DHS9999"
+        Private Const RuleMessage As String = "Null conditional issue '{0}' may result in Nothing"
+
         'No diagnostics expected to show up
         <TestMethod>
-        Public Sub TestMethod1()
+        Public Sub TestEmptyCodeSegmentShouldPass()
             Dim test = ""
             VerifyBasicDiagnostic(test)
         End Sub
 
         'Basic Scenario - items?.Count > 0
         <TestMethod>
-        Public Sub TestMethod2()
+        Public Sub TestNullConditionOperatorWithAndAlso()
+            PerformCodeSegmentTest("NullConditionOperatorWithAndAlso", AndAlsoRuleId, "items?.Count", 9, 12)
 
-            Dim test = "
-Option Strict On
-Option Explicit On
-
-Public Class Class1
-    Private items As System.Collections.Generic.List(Of Integer) = Nothing
-
-    Public Sub SimpleCode()
-        If items?.Count > 0 AndAlso AlwaysTrue() Then
-        End If
-    End Sub
-
-    Private Function AlwaysTrue() As Boolean
-        Return True
-    End Function
-End Class
-"
-            Dim expected = New DiagnosticResult With {.Id = "DHS9999",
-                .Message = String.Format("Null conditional issue '{0}' may result in Nothing", "items?.Count"),
-                .Severity = DiagnosticSeverity.Warning,
-                .Locations = New DiagnosticResultLocation() {
-                        New DiagnosticResultLocation("Test0.vb", 9, 12)
-                    }
-            }
-
-            VerifyBasicDiagnostic(test, expected)
-
-            '            Dim fixtest = "
-            'Module MODULE1
-
-            '    Sub Main()
-
-            '    End Sub
-
-            'End Module"
-            '            VerifyBasicFix(test, fixtest)
         End Sub
+
+
+        Private Shared Function GetTestCodeSegment(ByVal fileName As String) As String
+            Return IO.File.ReadAllText($"..\..\..\..\..\SampleReferenceCodeConsole\{fileName}.vb")
+        End Function
 
         <TestMethod>
         Public Sub TestMethod2Fixed()
-
-            Dim test = "
-Option Strict On
-Option Explicit On
-
-Public Class Class1
-    Private items As System.Collections.Generic.List(Of Integer) = Nothing
-
-    Public Sub SimpleCode()
-        If (items?.Count).GetValueOrDefault > 0 AndAlso AlwaysTrue() Then
-        End If
-    End Sub
-
-    Private Function AlwaysTrue() As Boolean
-        Return True
-    End Function
-End Class
-"
-
-            VerifyBasicDiagnostic(test)
+            VerifyBasicDiagnostic(GetTestCodeSegment("Test2Fixed"))
         End Sub
 
         ' HCSIS Scenario 1 - items?.Exists(Function(x) x.id = 1)
         <TestMethod>
         Public Sub TestMethod3()
-
-            Dim test = "
-Option Strict On
-Option Explicit On
-
-Public Class Class1
-    Private items As System.Collections.Generic.List(Of Integer) = Nothing
-
-    Public Sub SimpleCode()
-        If items?.Exists(Function(x) x > 10) AndAlso AlwaysTrue() Then
-        End If
-    End Sub
-
-    Private Function AlwaysTrue() As Boolean
-        Return True
-    End Function
-End Class
-"
-            Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
-                .Message = String.Format("Type name '{0}' contains lowercase letters", "items?.Exists(Function(x) x > 10)"),
-                .Severity = DiagnosticSeverity.Warning,
-                .Locations = New DiagnosticResultLocation() {
-                        New DiagnosticResultLocation("Test0.vb", 9, 12)
-                    }
-            }
-
-            VerifyBasicDiagnostic(test, expected)
-
-            '            Dim fixtest = "
-            'Module MODULE1
-
-            '    Sub Main()
-
-            '    End Sub
-
-            'End Module"
-            '            VerifyBasicFix(test, fixtest)
+            PerformCodeSegmentTest("Test3", AndAlsoRuleId, "items?.Exists(Function(x) x > 10)", 8, 12)
         End Sub
 
         ' HCSIS Scenario 2 - selectedSegment?.EffectiveBeginDate.HasValue
         <TestMethod>
         Public Sub TestMethod4()
+            PerformCodeSegmentTest("Test4", AndAlsoRuleId, "record?.EffectiveBeginDate.HasValue", 9, 12)
+        End Sub
 
-            Dim test = "
-Option Strict On
-Option Explicit On
+        <TestMethod>
+        Public Sub TestMethod5()
+            PerformCodeSegmentTest("Test5", RuleId, "newNullableBool", 7, 12)
+        End Sub
 
-Public Class Class1
-    Private items As System.Collections.Generic.List(Of Integer) = Nothing
 
-    Public Sub SimpleCode()
-        Dim record As Foo = Nothing
-        If record?.EffectiveBeginDate.HasValue AndAlso AlwaysTrue() Then
-        End If
-    End Sub
-
-    Private Function AlwaysTrue() As Boolean
-        Return True
-    End Function
-
-    Private Class Foo
-        Private _effectiveBeginDate As System.Nullable(Of Date)
-        Public Property EffectiveBeginDate() As System.Nullable(Of Date)
-            Get
-                Return _effectiveBeginDate
-            End Get
-            Set(ByVal value As System.Nullable(Of Date))
-                _effectiveBeginDate = value
-            End Set
-        End Property
-    End Class
-End Class
-"
-            Dim expected = New DiagnosticResult With {.Id = "SampelAnalyzerVB",
-                .Message = String.Format("Type name '{0}' contains lowercase letters", "record?.EffectiveBeginDate.HasValue"),
+        <DataTestMethod()>
+        <DataRow("Test5", RuleId, "newNullableBool", 7, 12, DisplayName:="DataTestMethod5")>
+        Public Sub PerformCodeSegmentTests(ByVal codeFileName As String,
+                                           ByVal ruleToTest As String,
+                                           ByVal message As String,
+                                           ByVal lineNumber As Int32,
+                                           ByVal columnNumber As Int32)
+            PerformCodeSegmentTest(codeFileName, ruleToTest, message, lineNumber, columnNumber)
+        End Sub
+        Private Sub PerformCodeSegmentTest(ByVal codeFileName As String,
+                                           ByVal ruleToTest As String,
+                                           ByVal message As String,
+                                           ByVal lineNumber As Int32,
+                                           ByVal columnNumber As Int32)
+            Dim test = GetTestCodeSegment(codeFileName)
+            Dim expected = New DiagnosticResult With {.Id = ruleToTest,
+                .Message = String.Format(RuleMessage, message),
                 .Severity = DiagnosticSeverity.Warning,
                 .Locations = New DiagnosticResultLocation() {
-                        New DiagnosticResultLocation("Test0.vb", 10, 12)
+                        New DiagnosticResultLocation("Test0.vb", lineNumber, columnNumber)
                     }
             }
 
             VerifyBasicDiagnostic(test, expected)
-
-            '            Dim fixtest = "
-            'Module MODULE1
-
-            '    Sub Main()
-
-            '    End Sub
-
-            'End Module"
-            '            VerifyBasicFix(test, fixtest)
         End Sub
 
         Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider
