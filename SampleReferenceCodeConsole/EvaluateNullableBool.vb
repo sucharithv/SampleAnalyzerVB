@@ -1,7 +1,7 @@
 ﻿Option Strict On
 Option Explicit On
-Public Class Test5
-    Sub EvaluateNunnableBool()
+Public Class EvaluateNullableBool
+    Sub EvaluateNullableBool()
         Dim newNullableBool As New Boolean?
         WriteLog("Evaluating If newNullableBool ...")
         If newNullableBool Then

@@ -1,11 +1,10 @@
 ﻿Option Strict On
 Option Explicit On
-
-Public Class Test2Fixed
+Public Class NullableWithExistsWithAndAlsoCheck
     Private items As System.Collections.Generic.List(Of Integer) = Nothing
 
     Public Sub SimpleCode()
-        If (items?.Count).GetValueOrDefault > 0 AndAlso AlwaysTrue() Then
+        If items?.Exists(Function(x) x > 10) AndAlso AlwaysTrue() Then
         End If
     End Sub
 
@@ -13,3 +12,4 @@ Public Class Test2Fixed
         Return True
     End Function
 End Class
+' HCSIS Scenario 1 - items?.Exists(Function(x) x.id = 1)

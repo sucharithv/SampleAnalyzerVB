@@ -1,7 +1,7 @@
 ﻿Option Strict On
 Option Explicit On
 
-Public Class Test4
+Public Class NullableWithHasValueCheckWithAndAlsoCheck
     Private items As System.Collections.Generic.List(Of Integer) = Nothing
 
     Public Sub SimpleCode()
@@ -26,3 +26,4 @@ Public Class Test4
         End Property
     End Class
 End Class
+' HCSIS Scenario 2 - selectedSegment?.EffectiveBeginDate.HasValue

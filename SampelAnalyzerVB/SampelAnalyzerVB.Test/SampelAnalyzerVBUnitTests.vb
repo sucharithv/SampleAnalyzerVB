@@ -21,50 +21,38 @@ Namespace SampelAnalyzerVB.Test
             VerifyBasicDiagnostic(test)
         End Sub
 
-        'Basic Scenario - items?.Count > 0
-        <TestMethod>
-        Public Sub TestNullConditionOperatorWithAndAlso()
-            PerformCodeSegmentTest("NullConditionOperatorWithAndAlso", AndAlsoRuleId, "items?.Count", 9, 12)
 
-        End Sub
-
-
-        Private Shared Function GetTestCodeSegment(ByVal fileName As String) As String
-            Return IO.File.ReadAllText($"..\..\..\..\..\SampleReferenceCodeConsole\{fileName}.vb")
-        End Function
-
-        <TestMethod>
-        Public Sub TestMethod2Fixed()
-            VerifyBasicDiagnostic(GetTestCodeSegment("Test2Fixed"))
-        End Sub
-
-        ' HCSIS Scenario 1 - items?.Exists(Function(x) x.id = 1)
-        <TestMethod>
-        Public Sub TestMethod3()
-            PerformCodeSegmentTest("Test3", AndAlsoRuleId, "items?.Exists(Function(x) x > 10)", 8, 12)
-        End Sub
-
-        ' HCSIS Scenario 2 - selectedSegment?.EffectiveBeginDate.HasValue
-        <TestMethod>
-        Public Sub TestMethod4()
-            PerformCodeSegmentTest("Test4", AndAlsoRuleId, "record?.EffectiveBeginDate.HasValue", 9, 12)
-        End Sub
-
-        <TestMethod>
-        Public Sub TestMethod5()
-            PerformCodeSegmentTest("Test5", RuleId, "newNullableBool", 7, 12)
-        End Sub
 
 
         <DataTestMethod()>
-        <DataRow("Test5", RuleId, "newNullableBool", 7, 12, DisplayName:="DataTestMethod5")>
-        Public Sub PerformCodeSegmentTests(ByVal codeFileName As String,
+        <DataRow("NullConditionOperatorUsingGetDefaultWithAndAlsoCheck", DisplayName:="NoIssuesNullConditionOperatorUsingGetDefaultWithAndAlsoCheck")>
+        Public Sub PerformTestsThatShouldNotFindIssues(ByVal codeFileName As String)
+            VerifyBasicDiagnostic(GetTestCodeSegment(codeFileName))
+        End Sub
+
+        <DataTestMethod()>
+        <DataRow("NullConditionOperatorWithAndAlsoCheck", AndAlsoRuleId, "items?.Count", 9, 12, DisplayName:="ShouldFindNullConditionOperatorWithAndAlsoCheck")>   'Basic Scenario - items?.Count > 0
+        <DataRow("NullableWithExistsWithAndAlsoCheck", AndAlsoRuleId, "items?.Exists(Function(x) x > 10)", 7, 12, DisplayName:="ShouldFindNullableWithExistsWithAndAlsoCheck")> ' HCSIS Scenario 1 - items?.Exists(Function(x) x.id = 1)
+        <DataRow("NullableWithHasValueCheckWithAndAlsoCheck", AndAlsoRuleId, "record?.EffectiveBeginDate.HasValue", 9, 12, DisplayName:="ShouldFindNullableWithHasValueCheckWithAndAlsoCheck")> ' HCSIS Scenario 2 - selectedSegment?.EffectiveBeginDate.HasValue
+        <DataRow("EvaluateNullableBool", RuleId, "newNullableBool", 7, 12, DisplayName:="ShouldFindNullableBool")>
+        Public Sub PerformTestsThatShouldFindIssues(ByVal codeFileName As String,
                                            ByVal ruleToTest As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
                                            ByVal columnNumber As Int32)
             PerformCodeSegmentTest(codeFileName, ruleToTest, message, lineNumber, columnNumber)
         End Sub
+
+
+        Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider
+            Return New SampelAnalyzerVBCodeFixProvider()
+        End Function
+
+        Protected Overrides Function GetBasicDiagnosticAnalyzer() As DiagnosticAnalyzer
+            Return New SampelAnalyzerVBAnalyzer()
+        End Function
+
+
         Private Sub PerformCodeSegmentTest(ByVal codeFileName As String,
                                            ByVal ruleToTest As String,
                                            ByVal message As String,
@@ -82,13 +70,9 @@ Namespace SampelAnalyzerVB.Test
             VerifyBasicDiagnostic(test, expected)
         End Sub
 
-        Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider
-            Return New SampelAnalyzerVBCodeFixProvider()
-        End Function
 
-        Protected Overrides Function GetBasicDiagnosticAnalyzer() As DiagnosticAnalyzer
-            Return New SampelAnalyzerVBAnalyzer()
+        Private Shared Function GetTestCodeSegment(ByVal fileName As String) As String
+            Return IO.File.ReadAllText($"..\..\..\..\..\SampleReferenceCodeConsole\{fileName}.vb")
         End Function
-
     End Class
 End Namespace

@@ -75,11 +75,11 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="NullConditionOperatorWithAndAlso.vb" />
-    <Compile Include="Test2Fixed.vb" />
-    <Compile Include="Test3.vb" />
-    <Compile Include="Test4.vb" />
-    <Compile Include="Test5.vb" />
+    <Compile Include="NullConditionOperatorWithAndAlsoCheck.vb" />
+    <Compile Include="NullConditionOperatorUsingGetDefaultWithAndAlsoCheck.vb" />
+    <Compile Include="NullableWithExistsWithAndAlsoCheck.vb" />
+    <Compile Include="NullableWithHasValueCheckWithAndAlsoCheck.vb" />
+    <Compile Include="EvaluateNullableBool.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

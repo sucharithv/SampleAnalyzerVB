@@ -2,7 +2,7 @@
 Option Explicit On
 Imports System.Collections.Generic
 
-Public Class NullConditionOperatorWithAndAlso
+Public Class NullConditionOperatorWithAndAlsoCheck
     Private items As List(Of Integer) = Nothing
 
     Public Sub SimpleCode()
@@ -14,3 +14,4 @@ Public Class NullConditionOperatorWithAndAlso
         Return True
     End Function
 End Class
+'Basic Scenario - items?.Count > 0
