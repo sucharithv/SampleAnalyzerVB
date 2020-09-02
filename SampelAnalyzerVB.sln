@@ -10,6 +10,9 @@ EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SampelAnalyzerVB.Vsix", "SampelAnalyzerVB\SampelAnalyzerVB.Vsix\SampelAnalyzerVB.Vsix.vbproj", "{25C621D3-8FFB-4294-A531-9EBCA9146036}"
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SampleReferenceCodeConsole", "SampleReferenceCodeConsole\SampleReferenceCodeConsole.vbproj", "{8860071D-2038-448D-9984-F8CD29FB4099}"
+	ProjectSection(ProjectDependencies) = postProject
+		{109676EF-E5D0-48D9-8272-C3DB48F811A6} = {109676EF-E5D0-48D9-8272-C3DB48F811A6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

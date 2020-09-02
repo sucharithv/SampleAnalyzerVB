@@ -51,9 +51,16 @@ Namespace SampelAnalyzerVB.Test
 
         <DataTestMethod()>
         <DataRow("Test2Fixed", DisplayName:="?. Wrapped in GetValueOrDefault")>
+        <DataRow("IsNothingCheck", DisplayName:="Nothing check on a nullable type")>
         Public Sub ShortCircuitingIfShouldPass(ByVal codeFileName As String)
             PerformPassingTest(codeFileName)
         End Sub
+
+        <TestMethod>
+        Public Sub DebugTest()
+            PerformPassingTest("Template")
+        End Sub
+
 
         Private Shared Function GetTestCodeSegment(ByVal fileName As String) As String
             Return IO.File.ReadAllText($"..\..\..\..\..\SampleReferenceCodeConsole\{fileName}.vb")

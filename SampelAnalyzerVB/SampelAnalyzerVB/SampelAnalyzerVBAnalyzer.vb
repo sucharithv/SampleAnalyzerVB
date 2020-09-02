@@ -43,9 +43,14 @@ Public Class SampelAnalyzerVBAnalyzer
 
         ' Skip analysis if there are errors in the source code as type information is not available
         ' when there are errors in the file
-        ' TODO: see if there is a way to report an error when running unit tests
         Dim diagnosticIssues = context.SemanticModel.GetDiagnostics()
-        If diagnosticIssues.Any(Function(d) d.Severity = DiagnosticSeverity.Error) Then Return
+        If diagnosticIssues.Any(Function(d) d.Severity = DiagnosticSeverity.Error) Then
+            Debug.WriteLine("Diagnostistics errors found in source:")
+            For Each issue In diagnosticIssues
+                Debug.WriteLine($"{issue}")
+            Next
+            Throw New NotSupportedException("Diagnostistics errors found in provided source. Check debug logs for details.")
+        End If
 
         Dim analyzeVs2019Issue As Boolean = False
         If analyzeVs2019Issue Then
@@ -72,6 +77,7 @@ Public Class SampelAnalyzerVBAnalyzer
                     context.ReportDiagnostic(diag)
                 End If
             Else
+                ' TODO: Do we need this?
                 ProcessShortCircuitingExpression(context, childNode)
             End If
         Next
@@ -82,24 +88,24 @@ Public Class SampelAnalyzerVBAnalyzer
         ' Process children if the node is a short circuit expression
         If IsShortCircuitNode(node) Then
             shouldProcessChildren = True
+            containsAndAlso = True
         Else
             ' Process children if type information is not available for the current node
             Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
             If typeInfo.Type Is Nothing Then
                 shouldProcessChildren = True
-            End If
-
-            ' Check if the resulting type is nullable and report diagnostics accordingly
-            If IsNullabelType(typeInfo.Type) Then
-                Dim diag = If(containsAndAlso,
-                                    Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
-                                    Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
-                context.ReportDiagnostic(diag)
+            Else
+                ' Check if the resulting type is nullable and report diagnostics accordingly
+                If IsNullabelType(typeInfo.Type) Then
+                    Dim diag = If(containsAndAlso,
+                                        Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
+                                        Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
+                    context.ReportDiagnostic(diag)
+                End If
             End If
         End If
 
         If shouldProcessChildren Then
-            containsAndAlso = IsShortCircuitNode(node)
             Dim childNodeCount As Long = 0
             For Each childNode In node.ChildNodes()
                 childNodeCount += 1
@@ -108,7 +114,7 @@ Public Class SampelAnalyzerVBAnalyzer
 
             ' TODO: when can we neither have type informtion or children?
             If childNodeCount = 0 Then
-                Throw New NotImplementedException($"Unsupported code '{node.GetText()}' encountered.")
+                Throw New NotSupportedException($"Unsupported expression '{node.GetText()}' encountered withing if statement '{context.Node}'.")
             End If
         End If
     End Sub
