@@ -56,7 +56,7 @@ Public Class SampelAnalyzerVBAnalyzer
         If analyzeVs2019Issue Then
             ' If the expression contains a short curcuit operator evaluate each of the expressions
             ' to see any any of them result in Nullable type
-            Dim ShortCircuitingExpressions = ifExp.DescendantNodes().TakeWhile(Function(node) IsShortCircuitNode(node))
+            Dim ShortCircuitingExpressions = ifExp.DescendantNodes().Where(Function(node) IsShortCircuitNode(node))
             For Each node In ShortCircuitingExpressions
                 ProcessShortCircuitingExpression(context, node)
             Next
@@ -84,8 +84,9 @@ Public Class SampelAnalyzerVBAnalyzer
         Dim shouldProcessChildren As Boolean = False
         ' Process children if the node is a short circuit expression
         If IsShortCircuitNode(node) Then
-            shouldProcessChildren = True
-            containsAndAlso = True
+            Dim shortCircuitNode = DirectCast(node, BinaryExpressionSyntax)
+            ProcessNodes(context, shortCircuitNode.Right, containsAndAlso)
+            ProcessNodes(context, shortCircuitNode.Left, True)
         Else
             ' Process children if type information is not available for the current node
             Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
