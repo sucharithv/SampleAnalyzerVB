@@ -141,6 +141,53 @@ Module Module1
         End If
         WriteSeparator()
 
+        'Initialize value
+
+        nullableInteger = 1
+
+
+        WriteLog($"************Initialized  value to {nullableInteger}**********")
+        WriteLog("-----------------------------")
+        WriteLog("Evaluating If nullableInteger = 0  AndAlso AlwaysTrue()...")
+        If nullableInteger = 0 AndAlso AlwaysTrue() Then
+            WriteLog("nullableInteger = 0 evaluated to TRUE")
+        Else
+            WriteLog("nullableInteger = 0  evaluated to FALSE")
+        End If
+        WriteSeparator()
+
+        WriteLog("")
+        WriteLog("-----------------------------")
+        WriteLog("Evaluating If nullableInteger > 0  AndAlso AlwaysTrue()...")
+        If nullableInteger > 0 AndAlso AlwaysTrue() Then
+            WriteLog("nullableInteger > 0 evaluated to TRUE")
+        Else
+            WriteLog("nullableInteger > 0  evaluated to FALSE")
+        End If
+        WriteSeparator()
+
+
+        WriteLog("")
+        WriteLog("-----------------------------")
+        WriteLog("Evaluating If nullableInteger <> 0  AndAlso AlwaysTrue()...")
+        If nullableInteger <> 0 AndAlso AlwaysTrue() Then
+            WriteLog("nullableInteger <> 0 evaluated to TRUE")
+        Else
+            WriteLog("nullableInteger <> 0  evaluated to FALSE")
+        End If
+        WriteSeparator()
+
+        WriteLog("")
+        WriteLog("-----------------------------")
+        WriteLog("Evaluating If nullableInteger < 0  AndAlso AlwaysTrue()...")
+        If nullableInteger < 0 AndAlso AlwaysTrue() Then
+            WriteLog("nullableInteger < 0 evaluated to TRUE")
+        Else
+            WriteLog("nullableInteger < 0  evaluated to FALSE")
+        End If
+        WriteSeparator()
+
+
         WriteLog("")
         WriteLog("-----------------------------")
         WriteLog("Evaluating If newNullableBool AndAlso AlwaysTrue() ...")
@@ -169,6 +216,12 @@ Module Module1
             WriteLog("nullableBoolNotInitialized AndAlso AlwaysTrue() evaluated to FALSE")
         End If
         WriteSeparator()
+    End Sub
+
+    Public Sub TestAndAlso()
+        If True AndAlso True AndAlso False Then
+
+        End If
     End Sub
     Private Sub SimpleCode()
         WriteLog("Entered SimpleCode")
