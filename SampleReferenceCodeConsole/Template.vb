@@ -7,7 +7,7 @@ Public Class TestXXX
     Sub EvaluateNullableBool()
         Dim newNullableBool As New Boolean?
         WriteLog("Evaluating If Not newNullableBool Is Nothing...")
-        If Nothing AndAlso True Then
+        If newNullableBool.HasValue AndAlso newNullableBool.Value = True AndAlso newNullableBool = True Then
             WriteLog("Not newNullableBool Is Nothing evaluated to TRUE")
         Else
             WriteLog("Not newNullableBool Is Nothing evaluated to FALSE")
