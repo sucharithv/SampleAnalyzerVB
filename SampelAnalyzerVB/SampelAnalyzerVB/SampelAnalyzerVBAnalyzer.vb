@@ -47,19 +47,16 @@ Public Class SampelAnalyzerVBAnalyzer
         Dim diagnosticIssues = context.SemanticModel.GetDiagnostics()
         If diagnosticIssues.Any(Function(d) d.Severity = DiagnosticSeverity.Error) Then Return
 
-        ' If the expression contains a short curcuit operator evaluate each of the expressions
-        ' to see any any of them result in Nullable type
-        Dim containsShortCircuitExp As Boolean = False
-        Dim ShortCircuitingExpressions = ifExp.DescendantNodes().TakeWhile(Function(node) IsShortCircuitNode(node))
-        For Each node In ShortCircuitingExpressions
-            ProcessShortCircuitingExpression(context, node)
-            containsShortCircuitExp = True
-        Next
-
-        If containsShortCircuitExp = False Then
-            Throw New NotImplementedException()
-            'TODO:
-            'ProcessNodes(context, ifExp.Condition, False)
+        Dim analyzeVs2019Issue As Boolean = False
+        If analyzeVs2019Issue Then
+            ' If the expression contains a short curcuit operator evaluate each of the expressions
+            ' to see any any of them result in Nullable type
+            Dim ShortCircuitingExpressions = ifExp.DescendantNodes().TakeWhile(Function(node) IsShortCircuitNode(node))
+            For Each node In ShortCircuitingExpressions
+                ProcessShortCircuitingExpression(context, node)
+            Next
+        Else
+            ProcessNodes(context, ifExp.Condition, False)
         End If
     End Sub
 
@@ -74,28 +71,45 @@ Public Class SampelAnalyzerVBAnalyzer
                     Dim diag = Diagnostic.Create(AndAlsoRule, childNode.GetLocation(), childNode.GetText().ToString().TrimEnd())
                     context.ReportDiagnostic(diag)
                 End If
+            Else
+                ProcessShortCircuitingExpression(context, childNode)
             End If
         Next
     End Sub
 
     Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, ByVal containsAndAlso As Boolean)
-        If (Not node.ChildNodes.Any) OrElse
-            TypeOf node Is ConditionalAccessExpressionSyntax OrElse
-            TypeOf node Is InvocationExpressionSyntax OrElse
-            TypeOf node Is MemberAccessExpressionSyntax Then
+        Dim shouldProcessChildren As Boolean = False
+        ' Process children if the node is a short circuit expression
+        If IsShortCircuitNode(node) Then
+            shouldProcessChildren = True
+        Else
+            ' Process children if type information is not available for the current node
+            Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
+            If typeInfo.Type Is Nothing Then
+                shouldProcessChildren = True
+            End If
 
-            If IsNullableExpression(context, node) Then
+            ' Check if the resulting type is nullable and report diagnostics accordingly
+            If IsNullabelType(typeInfo.Type) Then
                 Dim diag = If(containsAndAlso,
-                                Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
-                                Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
+                                    Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
+                                    Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
                 context.ReportDiagnostic(diag)
             End If
-        Else
+        End If
+
+        If shouldProcessChildren Then
+            containsAndAlso = IsShortCircuitNode(node)
+            Dim childNodeCount As Long = 0
             For Each childNode In node.ChildNodes()
-                If TypeOf childNode IsNot LiteralExpressionSyntax Then
-                    ProcessNodes(context, childNode, containsAndAlso)
-                End If
+                childNodeCount += 1
+                ProcessNodes(context, childNode, containsAndAlso)
             Next
+
+            ' TODO: when can we neither have type informtion or children?
+            If childNodeCount = 0 Then
+                Throw New NotImplementedException($"Unsupported code '{node.GetText()}' encountered.")
+            End If
         End If
     End Sub
 
