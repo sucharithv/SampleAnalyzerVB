@@ -2,6 +2,8 @@
 Option Explicit On
 
 Public Class TestXXX
+    Private items As System.Collections.Generic.List(Of Integer) = Nothing
+
     Sub EvaluateNullableBool()
         Dim newNullableBool As New Boolean?
         WriteLog("Evaluating If Not newNullableBool Is Nothing...")
@@ -11,6 +13,14 @@ Public Class TestXXX
             WriteLog("Not newNullableBool Is Nothing evaluated to FALSE")
         End If
     End Sub
+
+    Private Function AlwaysTrue() As Boolean
+        Return True
+    End Function
+
+    Private Function AlwaysFalse() As Boolean
+        Return False
+    End Function
 
     Sub WriteLog(ByVal message As String)
         System.Diagnostics.Debug.WriteLine(message)

@@ -76,9 +76,6 @@ Public Class SampelAnalyzerVBAnalyzer
                     Dim diag = Diagnostic.Create(AndAlsoRule, childNode.GetLocation(), childNode.GetText().ToString().TrimEnd())
                     context.ReportDiagnostic(diag)
                 End If
-            Else
-                ' TODO: Do we need this?
-                ProcessShortCircuitingExpression(context, childNode)
             End If
         Next
     End Sub
