@@ -40,6 +40,7 @@ Public Class SampelAnalyzerVBAnalyzer
 
     Private Sub AnalyzeNode(context As SyntaxNodeAnalysisContext)
         Dim ifExp = DirectCast(context.Node, IfStatementSyntax)
+        Debug.WriteLine($"AnalyzeNode - ifExp: {ifExp.Condition}")
 
         ' Skip analysis if there are errors in the source code as type information is not available
         ' when there are errors in the file
@@ -61,12 +62,13 @@ Public Class SampelAnalyzerVBAnalyzer
                 ProcessShortCircuitingExpression(context, node)
             Next
         Else
+            Dim state As New HashSet(Of String)
             ' determine if the right expression has a conditional access expression
             Dim containsConditionalAccess = ifExp.DescendantNodes.Any(Function(childNode) childNode.Kind = SyntaxKind.ConditionalAccessExpression)
             ' NOTE: for the right most expression processingAndAlso should be false... this is required as we dont want to report short
             ' circuit issues on the right most expression
             Dim processingAndAlso = False
-            ProcessNode(context, ifExp.Condition, processingAndAlso, containsConditionalAccess)
+            ProcessNode(context, ifExp.Condition, processingAndAlso, containsConditionalAccess, state)
         End If
     End Sub
 
@@ -78,41 +80,41 @@ Public Class SampelAnalyzerVBAnalyzer
         For Each childNode In node.ChildNodes()
             If Not IsShortCircuitNode(childNode) Then
                 If IsNullableExpression(context, childNode) Then
-                    Dim diag = Diagnostic.Create(ShortCircuitRule, childNode.GetLocation(), childNode.GetText().ToString().TrimEnd())
+                    Dim diag = Diagnostic.Create(ShortCircuitRule, childNode.GetLocation(), childNode.GetText().ToString().Trim())
                     context.ReportDiagnostic(diag)
                 End If
             End If
         Next
     End Sub
 
-    Private Sub ProcessNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean)
+    Private Sub ProcessNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean, state As HashSet(Of String))
         Dim shouldProcessChildren As Boolean = False
         ' Process children if the node is a short circuit expression
         If IsShortCircuitNode(node) Then
             Dim shortCircuitNode = DirectCast(node, BinaryExpressionSyntax)
 
             ' process right expression
-            ProcessNode(context, shortCircuitNode.Right, processingAndAlso, containsConditionalAccess)
+            ProcessNode(context, shortCircuitNode.Right, processingAndAlso, containsConditionalAccess, state)
 
             ' process left expression
             processingAndAlso = True
-            ProcessNode(context, shortCircuitNode.Left, processingAndAlso, containsConditionalAccess)
+            ProcessNode(context, shortCircuitNode.Left, processingAndAlso, containsConditionalAccess, state)
         ElseIf node.Kind = SyntaxKind.ParenthesizedExpression Then
-            ProcessChildNodes(context, node, processingAndAlso, containsConditionalAccess)
+            ProcessChildNodes(context, node, processingAndAlso, containsConditionalAccess, state)
         Else
-            Dim leafNodeProcessed = TryProcessLeafNode(context, node, processingAndAlso, containsConditionalAccess)
+            Dim leafNodeProcessed = TryProcessLeafNode(context, node, processingAndAlso, containsConditionalAccess, state)
             If Not leafNodeProcessed Then
-                ProcessChildNodes(context, node, processingAndAlso, containsConditionalAccess)
+                ProcessChildNodes(context, node, processingAndAlso, containsConditionalAccess, state)
             End If
         End If
 
     End Sub
 
-    Private Sub ProcessChildNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean)
+    Private Sub ProcessChildNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean, state As HashSet(Of String))
         Dim childNodeCount As Long = 0
         For Each childNode In node.ChildNodes()
             childNodeCount += 1
-            ProcessNode(context, childNode, processingAndAlso, containsConditionalAccess)
+            ProcessNode(context, childNode, processingAndAlso, containsConditionalAccess, state)
         Next
 
         ' TODO: when can we neither have type informtion or children?
@@ -122,20 +124,74 @@ Public Class SampelAnalyzerVBAnalyzer
         End If
     End Sub
 
-    Function TryProcessLeafNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean) As Boolean
+    Function TryProcessLeafNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean, state As HashSet(Of String)) As Boolean
+        Debug.WriteLine("")
+        Debug.WriteLine($"TryProcessLeafNode - node: {node}")
         Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
+        Debug.WriteLine($"type info: {typeInfo.Type}")
         If typeInfo.Type Is Nothing Then
             Return False
         Else
             ' Check if the resulting type is nullable and report diagnostics accordingly
             If IsNullabelType(typeInfo.Type) Then
-                Dim diag = If(processingAndAlso AndAlso containsConditionalAccess,
+                Dim reportShortCircuitRule = processingAndAlso AndAlso containsConditionalAccess
+                Dim isBinaryExp = TypeOf node Is BinaryExpressionSyntax
+
+                If (processingAndAlso OrElse IsShortCircuitNode(node.Parent)) AndAlso isBinaryExp Then
+                    Dim binaryExp = DirectCast(node, BinaryExpressionSyntax)
+                    Debug.WriteLine($"-->Processing left part of binary expression: {binaryExp.Left}")
+                    Dim hasValueFound = FindHasValue(context, binaryExp.Left, state)
+                    If Not hasValueFound Then
+                        Debug.WriteLine($"-->Processing right part of binary expression: {binaryExp.Right}")
+                        hasValueFound = FindHasValue(context, binaryExp.Right, state)
+                    End If
+                    If hasValueFound Then Return True
+                End If
+
+                If reportShortCircuitRule Then
+                    If isBinaryExp Then
+                        Debug.WriteLine("==>Processing binary expression")
+                        Dim binaryExp = DirectCast(node, BinaryExpressionSyntax)
+                        Dim nodeText = binaryExp.Left.GetText.ToString.Trim
+                        If state.Contains(nodeText) Then
+                            reportShortCircuitRule = False
+                            Debug.WriteLine($"Found .HasValue call in state")
+                        End If
+                    Else
+                        Debug.WriteLine("==>Processing uniary expression")
+                        Dim nodeText = node.GetText.ToString.Trim
+                        If state.Contains(nodeText) Then
+                            reportShortCircuitRule = False
+                            Debug.WriteLine($"Found .HasValue call in state")
+                        End If
+                    End If
+                End If
+
+                Dim diag = If(reportShortCircuitRule,
                                     Diagnostic.Create(ShortCircuitRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
                                     Diagnostic.Create(NullableRule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
                 context.ReportDiagnostic(diag)
             End If
         End If
         Return True
+    End Function
+
+    Private Function FindHasValue(context As SyntaxNodeAnalysisContext, node As SyntaxNode, state As HashSet(Of String)) As Boolean
+        If TypeOf node IsNot LiteralExpressionSyntax Then
+            Dim expText = node.GetText.ToString
+            Dim ifText = context.Node.GetText.ToString
+            Dim searchText = expText.Trim + ".HasValue"
+            Dim isFound = ifText.Contains(searchText)
+            ' TODO: HasValue has to be before the current expression
+            If isFound Then
+                state.Add(searchText)
+                Debug.WriteLine("Not adding diagnostics. Found call to HasValue for current expression.")
+                Return True
+            Else
+                Debug.WriteLine($"Call to HasValue was not found. expText: {searchText}, ifText: {ifText}")
+            End If
+        End If
+        Return False
     End Function
 
     Private Function IsNullableExpression(context As SyntaxNodeAnalysisContext, node As SyntaxNode) As Boolean

@@ -22,9 +22,9 @@ Namespace SampelAnalyzerVB.Test
         End Sub
 
         <DataTestMethod()>
-        <DataRow("Test11", "fooInstance.Status <> CaseStatus.Closed", 8, 12, DisplayName:="Test11-ECIS Scenario 3")>
         <DataRow("Test10", "fooInstance?.BeginDate.HasValue", 8, 12, DisplayName:="Test10")>
-        <DataRow("Test10A", "fooInstance?.BeginDate.HasValue", 8, 12, DisplayName:="Test10A")>
+        <DataRow("Test10A", "fooInstance?.BeginDate.HasValue = True", 8, 12, DisplayName:="Test10A")>
+        <DataRow("Test4Fixed", "record?.EffectiveBeginDate.HasValue", 9, 12, DisplayName:="Test4Fixed-Has HasValue check")>
         Public Sub ShortCircuitingIfShouldFail9999(ByVal codeFileName As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
@@ -43,8 +43,9 @@ Namespace SampelAnalyzerVB.Test
             PerformFailingTest(codeFileName, AndAlsoRuleId, message, lineNumber, columnNumber)
         End Sub
 
-        <Ignore>
         <DataTestMethod()>
+        <DataRow("Test11", RuleId, "fooInstance.Status <> CaseStatus.Closed", 8, 12,
+                           RuleId, "fooInstance.Status <> CaseStatus.Rejected", 8, 60, DisplayName:="Test11-ECIS Scenario 3")>
         Public Sub PerformFailingTests(ByVal codeFileName As String,
                                        ByVal firstRuleToTest As String,
                                        ByVal firstMessage As String,
@@ -84,7 +85,7 @@ Namespace SampelAnalyzerVB.Test
         <DataRow("Test12", DisplayName:="Test12-Has HasValue check")>
         <DataRow("Test12A", DisplayName:="Test12A-Has HasValue check")>
         <DataRow("Test12P", DisplayName:="Test12P-Has HasValue check")>
-        <DataRow("Test4Fixed", DisplayName:="Test4Fixed-Has HasValue check")>
+        <DataRow("Test9A", DisplayName:="Test9A-Has HasValue check")>
         Public Sub ShortCircuitingIfShouldPass(ByVal codeFileName As String)
             PerformPassingTest(codeFileName)
         End Sub
