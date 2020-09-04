@@ -43,6 +43,22 @@ Namespace SampelAnalyzerVB.Test
         End Sub
 
         <DataTestMethod()>
+        Public Sub PerformFailingTests(ByVal codeFileName As String,
+                                       ByVal firstRuleToTest As String,
+                                       ByVal firstMessage As String,
+                                       ByVal firstLineNumber As Int32,
+                                       ByVal firstColumnNumber As Int32,
+                                       ByVal secondRuleToTest As String,
+                                       ByVal secondMessage As String,
+                                       ByVal secondLineNumber As Int32,
+                                       ByVal secondColumnNumber As Int32)
+            PerformFailingTest(codeFileName,
+                               firstRuleToTest, firstMessage, firstLineNumber, firstColumnNumber,
+                               secondRuleToTest, secondMessage, secondLineNumber, secondColumnNumber)
+
+        End Sub
+
+        <DataTestMethod()>
         <DataRow("Test5", "newNullableBool", 7, 12, DisplayName:="Boolean?")>
         Public Sub BasicIfShouldFail(ByVal codeFileName As String,
                                            ByVal message As String,
@@ -101,6 +117,33 @@ Namespace SampelAnalyzerVB.Test
             VerifyBasicDiagnostic(testCode, expected)
         End Sub
 
+        Private Sub PerformFailingTest(ByVal codeFileName As String,
+                                       ByVal firstRuleToTest As String,
+                                       ByVal firstMessage As String,
+                                       ByVal firstLineNumber As Int32,
+                                       ByVal firstColumnNumber As Int32,
+                                       ByVal secondRuleToTest As String,
+                                       ByVal secondMessage As String,
+                                       ByVal secondLineNumber As Int32,
+                                       ByVal secondColumnNumber As Int32)
+            Dim testCode = GetTestCodeSegment(codeFileName)
+            Dim firstExpected = New DiagnosticResult With {.Id = firstRuleToTest,
+                .Message = String.Format(RuleMessage, firstMessage),
+                .Severity = DiagnosticSeverity.Warning,
+                .Locations = New DiagnosticResultLocation() {
+                        New DiagnosticResultLocation("Test0.vb", firstLineNumber, firstColumnNumber)
+                    }
+            }
+            Dim secondExpected = New DiagnosticResult With {.Id = secondRuleToTest,
+                .Message = String.Format(RuleMessage, secondMessage),
+                .Severity = DiagnosticSeverity.Warning,
+                .Locations = New DiagnosticResultLocation() {
+                        New DiagnosticResultLocation("Test0.vb", secondLineNumber, secondColumnNumber)
+                    }
+            }
+
+            VerifyBasicDiagnostic(testCode, firstExpected, secondExpected)
+        End Sub
 
         Protected Overrides Function GetBasicCodeFixProvider() As CodeFixProvider
             Return New SampelAnalyzerVBCodeFixProvider()
