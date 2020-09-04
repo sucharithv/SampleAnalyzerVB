@@ -63,6 +63,7 @@ Namespace SampelAnalyzerVB.Test
         <DataRow("Test2Fixed", DisplayName:="?. Wrapped in GetValueOrDefault")>
         <DataRow("IsNothingCheck", DisplayName:="Nothing check on a nullable type")>
         <DataRow("Test9", DisplayName:="Proper use of HasValue and Value")>
+        <DataRow("Test4Fixed", DisplayName:="Has HasValue check")>
         Public Sub ShortCircuitingIfShouldPass(ByVal codeFileName As String)
             PerformPassingTest(codeFileName)
         End Sub

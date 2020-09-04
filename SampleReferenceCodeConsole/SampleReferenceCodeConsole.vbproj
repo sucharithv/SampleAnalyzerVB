@@ -82,6 +82,7 @@
     <Compile Include="Test12P.vb" />
     <Compile Include="Test12A.vb" />
     <Compile Include="Test12.vb" />
+    <Compile Include="Test4Fixed.vb" />
     <Compile Include="Test9.vb" />
     <Compile Include="Test2Fixed.vb" />
     <Compile Include="Test3.vb" />
