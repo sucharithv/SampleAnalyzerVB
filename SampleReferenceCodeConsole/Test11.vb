@@ -5,7 +5,7 @@ Public Class Test11
     Sub EvaluateHasValue()
         Dim fooInstance As Foo = Nothing
         WriteLog("fooInstance.Status <> CaseStatus.Closed AndAlso fooInstance.Status <> CaseStatus.Rejected...")
-        If fooInstance.Status <> CaseStatus.Closed AndAlso fooInstance.Status <> CaseStatus.Rejected Then
+        If fooInstance.Status <> CaseStatus.Closed AndAlso fooInstance.Status.GetValueOrDefault <> CaseStatus.Rejected Then
             WriteLog("fooInstance.Status <> CaseStatus.Closed AndAlso fooInstance.Status <> CaseStatus.Rejected evaluated to TRUE")
         Else
             WriteLog("fooInstance.Status <> CaseStatus.Closed AndAlso fooInstance.Status <> CaseStatus.Rejected evaluated to FALSE")
