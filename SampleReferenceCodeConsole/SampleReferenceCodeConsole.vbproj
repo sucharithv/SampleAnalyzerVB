@@ -76,8 +76,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="NullConditionOperatorWithAndAlso.vb" />
+    <Compile Include="Test10A.vb" />
     <Compile Include="Test10.vb" />
     <Compile Include="Test11.vb" />
+    <Compile Include="Test12.vb" />
     <Compile Include="Test9.vb" />
     <Compile Include="Test2Fixed.vb" />
     <Compile Include="Test3.vb" />
