@@ -97,23 +97,29 @@ Public Class SampelAnalyzerVBAnalyzer
             ' process left expression
             processingAndAlso = True
             ProcessNode(context, shortCircuitNode.Left, processingAndAlso, containsConditionalAccess)
+        ElseIf node.Kind = SyntaxKind.ParenthesizedExpression Then
+            ProcessChildNodes(context, node, processingAndAlso, containsConditionalAccess)
         Else
             Dim leafNodeProcessed = TryProcessLeafNode(context, node, processingAndAlso, containsConditionalAccess)
-                If Not leafNodeProcessed Then
-                    Dim childNodeCount As Long = 0
-                    For Each childNode In node.ChildNodes()
-                        childNodeCount += 1
-                        ProcessNode(context, childNode, processingAndAlso, containsConditionalAccess)
-                    Next
-
-                    ' TODO: when can we neither have type informtion or children?
-                    ' NothingLiteralExpression
-                    If childNodeCount = 0 Then
-                        Throw New NotSupportedException($"Unsupported expression '{node.GetText()}' encountered withing if statement '{context.Node}'.")
-                    End If
-                End If
+            If Not leafNodeProcessed Then
+                ProcessChildNodes(context, node, processingAndAlso, containsConditionalAccess)
             End If
+        End If
 
+    End Sub
+
+    Private Sub ProcessChildNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean)
+        Dim childNodeCount As Long = 0
+        For Each childNode In node.ChildNodes()
+            childNodeCount += 1
+            ProcessNode(context, childNode, processingAndAlso, containsConditionalAccess)
+        Next
+
+        ' TODO: when can we neither have type informtion or children?
+        ' NothingLiteralExpression
+        If childNodeCount = 0 Then
+            Throw New NotSupportedException($"Unsupported expression '{node.GetText()}' encountered withing if statement '{context.Node}'.")
+        End If
     End Sub
 
     Function TryProcessLeafNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean) As Boolean
