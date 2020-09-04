@@ -22,10 +22,20 @@ Namespace SampelAnalyzerVB.Test
         End Sub
 
         <DataTestMethod()>
+        <DataRow("Test11", "fooInstance.Status <> CaseStatus.Closed", 8, 12, DisplayName:="ECIS Scenario 3")>
+        Public Sub ShortCircuitingIfShouldFail9999(ByVal codeFileName As String,
+                                           ByVal message As String,
+                                           ByVal lineNumber As Int32,
+                                           ByVal columnNumber As Int32)
+            PerformFailingTest(codeFileName, RuleId, message, lineNumber, columnNumber)
+        End Sub
+
+        <DataTestMethod()>
         <DataRow("NullConditionOperatorWithAndAlso", "items?.Count > 0", 9, 12, DisplayName:="ECIS Scenario 1")>
         <DataRow("Test3", "items?.Exists(Function(x) x > 10)", 8, 12, DisplayName:="HCSIS Scenario 1")>
         <DataRow("Test4", "record?.EffectiveBeginDate.HasValue", 9, 12, DisplayName:="HCSIS Scenario 2")>
-        Public Sub ShortCircuitingIfShouldFail(ByVal codeFileName As String,
+        <DataRow("Test10", "fooInstance?.BeginDate.HasValue", 8, 12, DisplayName:="ECIS Scenario 2")>
+        Public Sub ShortCircuitingIfShouldFail9998(ByVal codeFileName As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
                                            ByVal columnNumber As Int32)
@@ -57,6 +67,7 @@ Namespace SampelAnalyzerVB.Test
             PerformPassingTest(codeFileName)
         End Sub
 
+        <Ignore>
         <TestMethod>
         Public Sub DebugTest()
             PerformPassingTest("Template")
