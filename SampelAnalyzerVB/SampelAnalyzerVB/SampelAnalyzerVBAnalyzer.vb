@@ -22,13 +22,13 @@ Public Class SampelAnalyzerVBAnalyzer
     Private Shared ReadOnly Description As LocalizableString = New LocalizableResourceString(NameOf(My.Resources.AnalyzerDescription), My.Resources.ResourceManager, GetType(My.Resources.Resources))
     Private Const Category = "Naming"
 
-    Private Shared Rule As New DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault:=True, description:=Description)
-    Private Shared AndAlsoRule As New DiagnosticDescriptor(AndAlsoDiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault:=True, description:=Description)
+    Private Shared NullableRule As New DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault:=True, description:=Description)
+    Private Shared ShortCircuitRule As New DiagnosticDescriptor(AndAlsoDiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault:=True, description:=Description)
 
 
     Public Overrides ReadOnly Property SupportedDiagnostics As ImmutableArray(Of DiagnosticDescriptor)
         Get
-            Return ImmutableArray.Create(Rule, AndAlsoRule)
+            Return ImmutableArray.Create(NullableRule, ShortCircuitRule)
         End Get
     End Property
 
@@ -61,7 +61,12 @@ Public Class SampelAnalyzerVBAnalyzer
                 ProcessShortCircuitingExpression(context, node)
             Next
         Else
-            ProcessNodes(context, ifExp.Condition, False)
+            ' determine if the right expression has a conditional access expression
+            Dim containsConditionalAccess = ifExp.DescendantNodes.Any(Function(childNode) childNode.Kind = SyntaxKind.ConditionalAccessExpression)
+            ' NOTE: for the right most expression processingAndAlso should be false... this is required as we dont want to report short
+            ' circuit issues on the right most expression
+            Dim processingAndAlso = False
+            ProcessNode(context, ifExp.Condition, processingAndAlso, containsConditionalAccess)
         End If
     End Sub
 
@@ -73,49 +78,59 @@ Public Class SampelAnalyzerVBAnalyzer
         For Each childNode In node.ChildNodes()
             If Not IsShortCircuitNode(childNode) Then
                 If IsNullableExpression(context, childNode) Then
-                    Dim diag = Diagnostic.Create(AndAlsoRule, childNode.GetLocation(), childNode.GetText().ToString().TrimEnd())
+                    Dim diag = Diagnostic.Create(ShortCircuitRule, childNode.GetLocation(), childNode.GetText().ToString().TrimEnd())
                     context.ReportDiagnostic(diag)
                 End If
             End If
         Next
     End Sub
 
-    Private Sub ProcessNodes(context As SyntaxNodeAnalysisContext, node As SyntaxNode, ByVal containsAndAlso As Boolean)
+    Private Sub ProcessNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean)
         Dim shouldProcessChildren As Boolean = False
         ' Process children if the node is a short circuit expression
         If IsShortCircuitNode(node) Then
             Dim shortCircuitNode = DirectCast(node, BinaryExpressionSyntax)
-            ProcessNodes(context, shortCircuitNode.Right, containsAndAlso)
-            ProcessNodes(context, shortCircuitNode.Left, True)
+
+            ' process right expression
+            ProcessNode(context, shortCircuitNode.Right, processingAndAlso, containsConditionalAccess)
+
+            ' process left expression
+            processingAndAlso = True
+            ProcessNode(context, shortCircuitNode.Left, processingAndAlso, containsConditionalAccess)
         Else
-            ' Process children if type information is not available for the current node
-            Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
-            If typeInfo.Type Is Nothing Then
-                shouldProcessChildren = True
-            Else
-                ' Check if the resulting type is nullable and report diagnostics accordingly
-                If IsNullabelType(typeInfo.Type) Then
-                    Dim diag = If(containsAndAlso,
-                                        Diagnostic.Create(AndAlsoRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
-                                        Diagnostic.Create(Rule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
-                    context.ReportDiagnostic(diag)
+            Dim leafNodeProcessed = TryProcessLeafNode(context, node, processingAndAlso, containsConditionalAccess)
+                If Not leafNodeProcessed Then
+                    Dim childNodeCount As Long = 0
+                    For Each childNode In node.ChildNodes()
+                        childNodeCount += 1
+                        ProcessNode(context, childNode, processingAndAlso, containsConditionalAccess)
+                    Next
+
+                    ' TODO: when can we neither have type informtion or children?
+                    ' NothingLiteralExpression
+                    If childNodeCount = 0 Then
+                        Throw New NotSupportedException($"Unsupported expression '{node.GetText()}' encountered withing if statement '{context.Node}'.")
+                    End If
                 End If
             End If
-        End If
 
-        If shouldProcessChildren Then
-            Dim childNodeCount As Long = 0
-            For Each childNode In node.ChildNodes()
-                childNodeCount += 1
-                ProcessNodes(context, childNode, containsAndAlso)
-            Next
+    End Sub
 
-            ' TODO: when can we neither have type informtion or children?
-            If childNodeCount = 0 Then
-                Throw New NotSupportedException($"Unsupported expression '{node.GetText()}' encountered withing if statement '{context.Node}'.")
+    Function TryProcessLeafNode(context As SyntaxNodeAnalysisContext, node As SyntaxNode, processingAndAlso As Boolean, containsConditionalAccess As Boolean) As Boolean
+        Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
+        If typeInfo.Type Is Nothing Then
+            Return False
+        Else
+            ' Check if the resulting type is nullable and report diagnostics accordingly
+            If IsNullabelType(typeInfo.Type) Then
+                Dim diag = If(processingAndAlso AndAlso containsConditionalAccess,
+                                    Diagnostic.Create(ShortCircuitRule, node.GetLocation(), node.GetText().ToString().TrimEnd()),
+                                    Diagnostic.Create(NullableRule, node.GetLocation(), node.GetText().ToString().TrimEnd()))
+                context.ReportDiagnostic(diag)
             End If
         End If
-    End Sub
+        Return True
+    End Function
 
     Private Function IsNullableExpression(context As SyntaxNodeAnalysisContext, node As SyntaxNode) As Boolean
         Dim typeInfo = context.SemanticModel.GetTypeInfo(node)
