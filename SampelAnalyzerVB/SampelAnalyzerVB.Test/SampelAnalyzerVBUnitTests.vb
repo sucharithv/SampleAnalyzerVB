@@ -22,7 +22,9 @@ Namespace SampelAnalyzerVB.Test
         End Sub
 
         <DataTestMethod()>
-        <DataRow("Test11", "fooInstance.Status <> CaseStatus.Closed", 8, 12, DisplayName:="ECIS Scenario 3")>
+        <DataRow("Test11", "fooInstance.Status <> CaseStatus.Closed", 8, 12, DisplayName:="Test11-ECIS Scenario 3")>
+        <DataRow("Test10", "fooInstance?.BeginDate.HasValue", 8, 12, DisplayName:="Test10")>
+        <DataRow("Test10A", "fooInstance?.BeginDate.HasValue", 8, 12, DisplayName:="Test10A")>
         Public Sub ShortCircuitingIfShouldFail9999(ByVal codeFileName As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
@@ -32,9 +34,8 @@ Namespace SampelAnalyzerVB.Test
 
         <DataTestMethod()>
         <DataRow("NullConditionOperatorWithAndAlso", "items?.Count > 0", 9, 12, DisplayName:="ECIS Scenario 1")>
-        <DataRow("Test3", "items?.Exists(Function(x) x > 10)", 8, 12, DisplayName:="HCSIS Scenario 1")>
-        <DataRow("Test4", "record?.EffectiveBeginDate.HasValue", 9, 12, DisplayName:="HCSIS Scenario 2")>
-        <DataRow("Test10", "fooInstance?.BeginDate.HasValue", 8, 12, DisplayName:="ECIS Scenario 2")>
+        <DataRow("Test3", "items?.Exists(Function(x) x > 10)", 8, 12, DisplayName:="Test3-HCSIS Scenario 1")>
+        <DataRow("Test4", "record?.EffectiveBeginDate.HasValue", 9, 12, DisplayName:="Test4-HCSIS Scenario 2")>
         Public Sub ShortCircuitingIfShouldFail9998(ByVal codeFileName As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
@@ -42,6 +43,7 @@ Namespace SampelAnalyzerVB.Test
             PerformFailingTest(codeFileName, AndAlsoRuleId, message, lineNumber, columnNumber)
         End Sub
 
+        <Ignore>
         <DataTestMethod()>
         Public Sub PerformFailingTests(ByVal codeFileName As String,
                                        ByVal firstRuleToTest As String,
@@ -59,7 +61,7 @@ Namespace SampelAnalyzerVB.Test
         End Sub
 
         <DataTestMethod()>
-        <DataRow("Test5", "newNullableBool", 7, 12, DisplayName:="Boolean?")>
+        <DataRow("Test5", "newNullableBool", 7, 12, DisplayName:="Test5-Boolean?")>
         Public Sub BasicIfShouldFail(ByVal codeFileName As String,
                                            ByVal message As String,
                                            ByVal lineNumber As Int32,
@@ -68,18 +70,21 @@ Namespace SampelAnalyzerVB.Test
         End Sub
 
         <DataTestMethod()>
-        <DataRow("Test6", DisplayName:="Is Nothing")>
-        <DataRow("Test7", DisplayName:="IsNot Nothing")>
-        <DataRow("Test8", DisplayName:="Not Is Nothing")>
+        <DataRow("Test6", DisplayName:="Test6-Is Nothing")>
+        <DataRow("Test7", DisplayName:="Test7-IsNot Nothing")>
+        <DataRow("Test8", DisplayName:="test8-Not Is Nothing")>
         Public Sub BasicIfShouldPass(ByVal codeFileName As String)
             PerformPassingTest(codeFileName)
         End Sub
 
         <DataTestMethod()>
-        <DataRow("Test2Fixed", DisplayName:="?. Wrapped in GetValueOrDefault")>
-        <DataRow("IsNothingCheck", DisplayName:="Nothing check on a nullable type")>
-        <DataRow("Test9", DisplayName:="Proper use of HasValue and Value")>
-        <DataRow("Test4Fixed", DisplayName:="Has HasValue check")>
+        <DataRow("Test2Fixed", DisplayName:="Test2Fixed-?. Wrapped in GetValueOrDefault")>
+        <DataRow("IsNothingCheck", DisplayName:="IsNothingCheck-Nothing check on a nullable type")>
+        <DataRow("Test9", DisplayName:="Test9-Proper use of HasValue and Value")>
+        <DataRow("Test12", DisplayName:="Test12-Has HasValue check")>
+        <DataRow("Test12A", DisplayName:="Test12A-Has HasValue check")>
+        <DataRow("Test12P", DisplayName:="Test12P-Has HasValue check")>
+        <DataRow("Test4Fixed", DisplayName:="Test4Fixed-Has HasValue check")>
         Public Sub ShortCircuitingIfShouldPass(ByVal codeFileName As String)
             PerformPassingTest(codeFileName)
         End Sub

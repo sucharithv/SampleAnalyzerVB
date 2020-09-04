@@ -4,11 +4,11 @@ Option Explicit On
 Public Class Test10A
     Sub EvaluateHasValueWithNullConditionEqualsTrue()
         Dim fooInstance As Foo = Nothing
-        WriteLog("fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue...")
+        WriteLog("fooInstance?.BeginDate.HasValue = True AndAlso fooInstance.BeginDate > System.DateTime.MinValue...")
         If fooInstance?.BeginDate.HasValue = True AndAlso fooInstance.BeginDate > System.DateTime.MinValue Then
-            WriteLog("fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue evaluated to TRUE")
+            WriteLog("fooInstance?.BeginDate.HasValue = True AndAlso fooInstance.BeginDate > System.DateTime.MinValue evaluated to TRUE")
         Else
-            WriteLog("fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue evaluated to FALSE")
+            WriteLog("fooInstance?.BeginDate.HasValue = True AndAlso fooInstance.BeginDate > System.DateTime.MinValue evaluated to FALSE")
         End If
     End Sub
 

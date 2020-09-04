@@ -5,7 +5,7 @@ Public Class Test10
     Sub EvaluateHasValue()
         Dim fooInstance As Foo = Nothing
         WriteLog("fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue...")
-        If fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate.GetValueOrDefault > System.DateTime.MinValue Then
+        If fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue Then
             WriteLog("fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue evaluated to TRUE")
         Else
             WriteLog("fooInstance?.BeginDate.HasValue AndAlso fooInstance.BeginDate > System.DateTime.MinValue evaluated to FALSE")
